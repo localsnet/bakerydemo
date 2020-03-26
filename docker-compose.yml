@@ -10,16 +10,24 @@ services:
     image: postgres:9.6
     expose:
       - "5432"
+    networks:
+      - wagtailnet
+
   redis:
     restart: always
     image: redis:3.0
     expose:
       - "6379"
+    networks:
+      - wagtailnet
+
   elasticsearch:
     image: elasticsearch:2.3
     restart: always
     expose:
       - "9200"
+    networks:
+      - wagtailnet
   app:
     environment:
       DJANGO_SECRET_KEY: changeme
@@ -35,11 +43,45 @@ services:
       - db:db
       - redis:redis
       - elasticsearch:elasticsearch
-    ports:
-      - "8000:8000"
+#    ports:
+#      - "8000:8000"
+    networks:
+      - wagtailnet
     depends_on:
       - db
       - redis
       - elasticsearch
+      - nginx
+
+  nginx:
+    container_name: Nginx
+    build: ./nginx
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./bakerydemo/static/:/home/wagtail_site/static
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    networks:
+      - wagtailnet
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  certbot:
+    container_name: CertBot
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    networks:
+      - wagtailnet
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+
+networks:
+  wagtailnet:
+
 volumes:
   media-root:

@@ -1,0 +1,90 @@
+gzip on;
+gzip_vary on;
+gzip_min_length 10240;
+gzip_proxied expired no-cache no-store private auth;
+gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml;
+gzip_disable "MSIE [1-6]\.";
+
+upstream wagtail_site {
+    server app:8000;
+}
+
+
+server {
+    server_name www.wagtaiSite.com;
+    return 301 $scheme://wagtaiSite.com$request_uri;
+}
+
+#Block for the https://www redirect to https://
+#It is much much faster than using ifs
+server {
+
+    proxy_connect_timeout       600;
+    proxy_send_timeout          600;
+    proxy_read_timeout          600;
+    send_timeout                600;
+
+
+    listen 443 ssl;
+    server_name www.wagtaiSite.com;
+    charset utf-8;
+
+
+   ssl_certificate /etc/letsencrypt/live/wagtaiSite.com/fullchain.pem;
+   ssl_certificate_key /etc/letsencrypt/live/wagtaiSite.com/privkey.pem;
+   include /etc/letsencrypt/options-ssl-nginx.conf;
+   ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+   return 301 https://wagtaiSite.com$request_uri;
+}
+
+
+server {
+
+    proxy_connect_timeout       600;
+    proxy_send_timeout          600;
+    proxy_read_timeout          600;
+    send_timeout                600;
+
+
+    listen 443 ssl;
+    server_name wagtaiSite.com;
+    charset utf-8;
+
+
+   ssl_certificate /etc/letsencrypt/live/wagtaiSite.com/fullchain.pem;
+   ssl_certificate_key /etc/letsencrypt/live/wagtaiSite.com/privkey.pem;
+   include /etc/letsencrypt/options-ssl-nginx.conf;
+   ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+
+    location / {
+        proxy_pass http://wagtai_site;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_redirect off;
+    }
+
+    location /static/ {
+        alias /home/wagtai_site/static/;
+    }
+
+}
+
+
+server {
+
+    listen 80;
+    server_name wagtaiSite.com www.wagtaiSite.com;
+    charset utf-8;
+
+    location / {
+	return 301 https://$host$request_uri;
+   }
+
+
+      location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+}

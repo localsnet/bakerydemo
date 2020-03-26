@@ -5,10 +5,10 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   exit 1
 fi
 
-domains=(wagtaiSite.com www.wagtaiSite.com)
+domains=(ec2-3-83-88-223.compute-1.amazonaws.com)
 rsa_key_size=4096
 data_path="./data/certbot"
-email="myemailaddress@email.com" # Adding a valid address is strongly recommended
+email="localsnet@gmail.com" # Adding a valid address is strongly recommended
 staging=1 # Set to 1 if you're testing your setup to avoid hitting request limits
 
 if [ -d "$data_path" ]; then
